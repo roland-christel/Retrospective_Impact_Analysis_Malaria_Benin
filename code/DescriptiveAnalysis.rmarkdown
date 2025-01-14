@@ -22,7 +22,11 @@ format:
     page-layout: full
 ---
 
+
+
 ## Setting up the working environment (necessary R packages)
+
+
 
 ```{r filename = "Packages"}
 if(!require("readxl")){install.packages("readxl")}
@@ -41,7 +45,11 @@ if(!require("here")){install.packages("here")}
 
 ```
 
+
+
 ## Data Importation
+
+
 
 ```{r}
 data <- read_xlsx(here('processedData', file='COMPLETUDE_PNLP1_BENIN.xlsx'), sheet = "data")
@@ -84,24 +92,36 @@ data$monthYear <-  str_replace_all(data$monthYear,
 head(data, 10)
 ```
 
+
+
 ## Data Wrangling
 
 We could see that the maximum of actual report is 2 instead of 1.
+
+
 
 ```{r}
 summary(data)
 ```
 
+
+
 We suspect a reporting error and will change every 2 with 1.
+
+
 
 ```{r}
 data$actualReports <- as.numeric(gsub(2, 1, data$actualReports) )
 summary(data)
 ```
 
+
+
 ## Completeness and Timeliness of data
 
 The data demonstrates a significant disparity in health facility reporting patterns between 2017-2023. The majority of facilities (70,838, representing 91.7%) achieved high reporting compliance with rates between 75-100%. In contrast, a smaller proportion (6,445 facilities, or 8.3%) showed limited reporting activity with rates between 0-25%.
+
+
 
 ```{r, dpi=300}
 #| fig-width: 1.5
@@ -333,6 +353,8 @@ for(i in 1:length(d)){
 plots$LITTORAL
 ```
 
+
+
 We are expecting 84 reports per facility (12\*7). Let's show the distribution of report percentages by health zone in Benin
 
 Most health zones have high reporting rates (\>75%); Best Performances (high percentage with little variation)=N'Dali-Parakou;Dassa-Glazoué;Cotonou 6
@@ -340,6 +362,8 @@ Most health zones have high reporting rates (\>75%); Best Performances (high per
 More Variable Performances (wider boxes, indicating greater variability in reporting rates):Kouandé-Péhunco-Kérou, Banikoara (HZ) and Malanville-Karimama
 
 Several health zones have isolated red points (•) at the bottom of the graph, indicating facilities with reporting rates significantly lower than their zone average
+
+
 
 ```{r}
 
@@ -371,6 +395,8 @@ ggplot(facility_reports, aes(x = reorder(HZs, percentage), y = percentage)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 25))
 ```
 
+
+
 The figure shows the percentage of facilities with reporting rates greater than or equal to the corresponding threshold vs threshold number of reports
 
 percentage of facilities meeting or exceeding
@@ -382,6 +408,8 @@ At least 85% of facilities submitted 90 or more reports.
 Reporting compliance decreases more significantly as the threshold nears the maximum value.
 
 Number of facilities that have submitted at least each unique value
+
+
 
 ```{r}
 unique_reports <- sort(unique(facility_reports$Reports))
@@ -412,9 +440,13 @@ ggplot(result, aes(x = Reports, y = percent)) +
   )
 ```
 
+
+
 # Downloading Climatic Data
 
 Retriving the geogrphical coordinates of admin 2 districts in Benin
+
+
 
 ```{r}
 
@@ -470,7 +502,11 @@ load(here('processedData', "benin_cds_precipi_temp.RData"))
 
 ```
 
+
+
 Adding district names to climatic data
+
+
 
 ```{r}
 
@@ -479,7 +515,11 @@ data_preci_temp <- benin_cds_precipi_temp %>%
   left_join(benin_points, by = c('latitude' = 'lat', 'longitude' = 'lon'))
 ```
 
+
+
 Imputing the missing data in precipitation & temperature data
+
+
 
 ```{r}
 # Imputation of missing temparature values 
@@ -921,7 +961,11 @@ for (i in 1:length(plots)){
 }
 ```
 
+
+
 # Propensity Score Matching
+
+
 
 ```{r}
 pre_smc_data <- dataFinal %>%
@@ -1086,7 +1130,11 @@ dataFinal1 <- dataFinal1 %>%
 
 ```
 
+
+
 exp(−0.06858) ≈0.934, meaning a 6.6% decrease in the incidence rate for each unit increase in SMC_lag2.
+
+
 
 ```{r}
 #| fig-width: 14
@@ -1139,3 +1187,4 @@ ggplot(dataFinal1_clean, aes(x = as.Date(date))) +
 
 
 ```
+
