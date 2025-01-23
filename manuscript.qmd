@@ -1,0 +1,142 @@
+---
+title: 'The Impact of Seasonal Malaria Chemoprevention in Benin Republic: A Retrospective Statistical Analysis'
+author:
+  - name: Sonounameto Roland Christel 
+    orcid: 0009-0007-5841-4336
+    corresponding: true
+    email: roland.sonounameto@outlook.com
+    roles:
+      - Conception
+      - Software
+      - Writing the frit draft
+    affiliations:
+      - The African Institute for Mathematical Sciences-Research and Innovation Centre
+  - name: to be added
+    orcid: to be added
+    corresponding: false
+    roles: []
+    affiliations:
+      - to be added
+license: CC BY-SA 4.0
+keywords:
+  - to be added
+  - to be added
+date: '2022-05-11'
+abstract: |
+  to be added
+keypoints: to be added
+citation:
+  container-title: Notebooks Now!
+draft: true
+#bibliography: references.bib
+echo: false
+---
+
+## Loading the necessary R packages
+
+```{r filename = "Packages"}
+#|message: false
+#|warning: false
+suppressMessages(suppressWarnings({
+  if(!require("readxl")){install.packages("readxl", quiet = TRUE)}
+  if(!require("stringr")){install.packages("stringr", quiet = TRUE)}
+  if(!require("stringi")){install.packages("stringi", quiet = TRUE)}
+  if(!require("chirps")){install.packages("chirps", quiet = TRUE)}
+  if(!require("sf")){install.packages("sf", quiet = TRUE)}
+  if(!require("rgeoboundaries")){install.packages("rgeoboundaries", quiet = TRUE)}
+  if(!require("FNN")){install.packages("FNN", quiet = TRUE)}
+  if(!require("tidyverse")){install.packages("tidyverse", quiet = TRUE)}
+  if(!require("cobalt")){install.packages("cobalt", quiet = TRUE)}
+  if(!require("MatchIt")){install.packages("MatchIt", quiet = TRUE)}
+  if(!require("glmmTMB")){install.packages("glmmTMB", quiet = TRUE)}
+  if(!require("splines")){install.packages("splines", quiet = TRUE)}
+  if(!require("here")){install.packages("here", quiet = TRUE)}
+}))
+
+```
+
+
+## The malaria cases and compleness data from 2017 to 2023 are imported.  
+```{r}
+source('code/month_fr_to_eng_function.R')
+dataCases <- read_xlsx("processedData/casesMalariaBenin.xlsx", sheet = "casesData")
+dataCompleteness <- read_xlsx("processedData/completudeData.xlsx", sheet = "completude")
+
+dataCases$periodname_date <- lubridate::my(french_to_english(dataCases$periodname))
+datCases <- dataCases %>% 
+          mutate(
+            year = year(periodname_date),
+            monthYear = format(periodname_date, "%B %Y")
+          )
+dataCases$periodname <-  str_replace_all(dataCases$periodname,
+                                   c("Janvier" = "Jan", 
+                                     "Février" = "Feb", 
+                                     "Mars" = "Mar", 
+                                     "Avril" = "Apr", 
+                                     "Mai" = "May", 
+                                     "Juin" = "Jun",
+                                     "Juillet" = "Jul", 
+                                     "Août" = "Aug", 
+                                     "Septembre" = "Sep", 
+                                     "Octobre" = "Oct", 
+                                     "Novembre" = "Nov", 
+                                     "Décembre" = "Dec"))
+
+
+#==============================================================================
+dataCases <-  dataCases %>% 
+  filter(
+    year != 2024
+  ) %>% 
+  mutate(
+    HZs = case_when(
+      HZs %in% c("Cotonou 1-Cotonou 4", "Cotonou 5", "Cotonou 2-Cotonou 3", "Cotonou 6") ~ "Cotonou",
+      TRUE ~ HZs
+    ), 
+    HFs = ifelse(HFs == "CS Zounzonme" & HZs == "Bohicon-Za-kpota-Zogbodomey", 
+                      "CS Zounzonme_BZZ", 
+                      HFs),
+         HFs = ifelse(HFs == "CS Partago" & HZs == "Bassila (ZS)", 
+                      "CS Partago_Bassila", 
+                      HFs),
+         HFs = ifelse(HFs == "CS Deme" & HZs == "Bohicon-Za-kpota-Zogbodomey", 
+                      "CS Deme_BZZ", 
+                      HFs)
+  ) 
+
+#===============================================================================
+dataCompleteness <-  dataCompleteness %>% 
+  filter(
+    year != 2024
+  ) %>% 
+  mutate(
+    HZs = case_when(
+      HZs %in% c("Cotonou 1-Cotonou 4", "Cotonou 5", "Cotonou 2-Cotonou 3", "Cotonou 6") ~ "Cotonou",
+      TRUE ~ HZs
+    ), 
+    HFs = ifelse(HFs == "CS Zounzonme" & HZs == "Bohicon-Za-kpota-Zogbodomey", 
+                      "CS Zounzonme_BZZ", 
+                      HFs),
+         HFs = ifelse(HFs == "CS Partago" & HZs == "Bassila (ZS)", 
+                      "CS Partago_Bassila", 
+                      HFs),
+         HFs = ifelse(HFs == "CS Deme" & HZs == "Bohicon-Za-kpota-Zogbodomey", 
+                      "CS Deme_BZZ", 
+                      HFs)
+  ) 
+
+dataCompleteness$monthYear <-  str_replace_all(dataCompleteness$monthYear,
+                                   c("Janvier" = "Jan", 
+                                     "Février" = "Feb", 
+                                     "Mars" = "Mar", 
+                                     "Avril" = "Apr", 
+                                     "Mai" = "May", 
+                                     "Juin" = "Jun",
+                                     "Juillet" = "Jul", 
+                                     "Août" = "Aug", 
+                                     "Septembre" = "Sep", 
+                                     "Octobre" = "Oct", 
+                                     "Novembre" = "Nov", 
+                                     "Décembre" = "Dec"))
+```
+
