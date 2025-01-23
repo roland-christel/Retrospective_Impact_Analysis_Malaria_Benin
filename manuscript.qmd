@@ -63,7 +63,7 @@ dataCases <- read_xlsx("processedData/casesMalariaBenin.xlsx", sheet = "casesDat
 dataCompleteness <- read_xlsx("processedData/completudeData.xlsx", sheet = "completude")
 
 dataCases$periodname_date <- lubridate::my(french_to_english(dataCases$periodname))
-datCases <- dataCases %>% 
+dataCases <- dataCases %>% 
           mutate(
             year = year(periodname_date),
             monthYear = format(periodname_date, "%B %Y")
@@ -105,6 +105,28 @@ dataCases <-  dataCases %>%
   ) 
 
 #===============================================================================
+dataCompleteness$periodname_date <- lubridate::my(french_to_english(dataCompleteness$periodname))
+dataCompleteness <- dataCompleteness %>% 
+          mutate(
+            year = year(periodname_date),
+            monthYear = format(periodname_date, "%B %Y")
+          )
+dataCompleteness$periodname <-  str_replace_all(dataCompleteness$periodname,
+                                   c("Janvier" = "Jan", 
+                                     "Février" = "Feb", 
+                                     "Mars" = "Mar", 
+                                     "Avril" = "Apr", 
+                                     "Mai" = "May", 
+                                     "Juin" = "Jun",
+                                     "Juillet" = "Jul", 
+                                     "Août" = "Aug", 
+                                     "Septembre" = "Sep", 
+                                     "Octobre" = "Oct", 
+                                     "Novembre" = "Nov", 
+                                     "Décembre" = "Dec"))
+
+
+
 dataCompleteness <-  dataCompleteness %>% 
   filter(
     year != 2024
@@ -123,20 +145,160 @@ dataCompleteness <-  dataCompleteness %>%
          HFs = ifelse(HFs == "CS Deme" & HZs == "Bohicon-Za-kpota-Zogbodomey", 
                       "CS Deme_BZZ", 
                       HFs)
-  ) 
-
-dataCompleteness$monthYear <-  str_replace_all(dataCompleteness$monthYear,
-                                   c("Janvier" = "Jan", 
-                                     "Février" = "Feb", 
-                                     "Mars" = "Mar", 
-                                     "Avril" = "Apr", 
-                                     "Mai" = "May", 
-                                     "Juin" = "Jun",
-                                     "Juillet" = "Jul", 
-                                     "Août" = "Aug", 
-                                     "Septembre" = "Sep", 
-                                     "Octobre" = "Oct", 
-                                     "Novembre" = "Nov", 
-                                     "Décembre" = "Dec"))
+  )
 ```
+
+
+
+
+```{r}
+
+dataCasesCompletness <- dataCases %>%
+                                  left_join(
+                                    dataCompleteness %>% 
+                                      select(periodname, HZs, HFs, expectedReports, actualReports), 
+                                    by = c('periodname', 'HZs', 'HFs')
+                                  )
+
+
+dataCasesCompletness <- dataCasesCompletness %>% 
+                                  group_by(periodname,HZs, HFs) %>% 
+                                  mutate(
+                                    
+                                    totCases = sum(presumptiveUncompCases_U5,        
+                                                     uncompCases_microscopyPositive_U5, 
+                                                     uncompCases_RDTPositive_U5,
+                                                     compCases_microscopyPositive_U5,
+                                                     compCases_RDTPositive_U5,
+                                                   presumptiveUncompCases_O5,        
+                                                     uncompCases_microscopyPositive_O5, 
+                                                     uncompCases_RDTPositive_O5,
+                                                     compCases_microscopyPositive_O5,
+                                                     compCases_RDTPositive_O5, na.rm = T
+                                                   ),
+                                    
+                                    totCases_U5 = sum(presumptiveUncompCases_U5,        
+                                                     uncompCases_microscopyPositive_U5, 
+                                                     uncompCases_RDTPositive_U5,
+                                                     compCases_microscopyPositive_U5,
+                                                     compCases_RDTPositive_U5, na.rm = T
+                                                    ),
+                                    
+                                    totCases_O5 = sum(presumptiveUncompCases_O5,        
+                                                     uncompCases_microscopyPositive_O5, 
+                                                     uncompCases_RDTPositive_O5,
+                                                     compCases_microscopyPositive_O5,
+                                                     compCases_RDTPositive_O5, na.rm = T
+                                                    ),
+                                    
+                                    totTestedCases = sum(uncompCases_microscopyPositive_U5, 
+                                                         uncompCases_RDTPositive_U5,
+                                                         compCases_microscopyPositive_U5,
+                                                         compCases_RDTPositive_U5,
+                                                         uncompCases_microscopyPositive_O5, 
+                                                         uncompCases_RDTPositive_O5,
+                                                         compCases_microscopyPositive_O5,
+                                                         compCases_RDTPositive_O5, na.rm = T
+                                                      ),
+                                    
+                                    totTestedCases_U5 = sum(uncompCases_microscopyPositive_U5, 
+                                                         uncompCases_RDTPositive_U5,
+                                                         compCases_microscopyPositive_U5,
+                                                         compCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                
+                                    totTestedCases_O5 = sum(uncompCases_microscopyPositive_O5, 
+                                                        uncompCases_RDTPositive_O5,
+                                                        compCases_microscopyPositive_O5,
+                                                        compCases_RDTPositive_O5, na.rm = T
+                                                        ),
+                                
+                                    totUncompCases = sum(presumptiveUncompCases_O5,
+                                                         presumptiveUncompCases_U5,
+                                                         uncompCases_microscopyPositive_O5,
+                                                         uncompCases_microscopyPositive_U5,
+                                                         uncompCases_RDTPositive_O5,
+                                                         uncompCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totUncompCases_U5 = sum(presumptiveUncompCases_U5,
+                                                         uncompCases_microscopyPositive_U5,
+                                                         uncompCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totUncompCases_O5 = sum(presumptiveUncompCases_O5,
+                                                         uncompCases_microscopyPositive_O5,
+                                                         uncompCases_RDTPositive_O5, na.rm = T
+                                                        ),
+                                    
+                                    totTestedUncompCases_U5 = sum(
+                                                         uncompCases_microscopyPositive_U5,
+                                                         uncompCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totTestedUncompCases_O5 = sum(
+                                                         uncompCases_microscopyPositive_O5,
+                                                         uncompCases_RDTPositive_O5, na.rm = T
+                                                        ),
+                                    
+                                    totCompCases = sum(presumptiveCompCases_O5,
+                                                         presumptiveCompCases_U5,
+                                                         compCases_microscopyPositive_O5,
+                                                         compCases_microscopyPositive_U5,
+                                                         compCases_RDTPositive_O5,
+                                                         compCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totCompCases_U5 = sum(presumptiveCompCases_U5,
+                                                         compCases_microscopyPositive_U5,
+                                                         compCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totCompCases_O5 = sum(presumptiveCompCases_O5,
+                                                         compCases_microscopyPositive_O5,
+                                                         compCases_RDTPositive_O5, na.rm = T
+                                                        ),
+                                    
+                                    totTestedCompCases_U5 = sum(
+                                                         compCases_microscopyPositive_U5,
+                                                         compCases_RDTPositive_U5, na.rm = T
+                                                        ),
+                                    
+                                    totTestedCompCases_O5 = sum(
+                                                         compCases_microscopyPositive_O5,
+                                                         compCases_RDTPositive_O5, na.rm = T
+                                                        ),
+                                    
+                                    totDeaths             = sum(
+                                                                deathsCompCases_testPositive_O5,
+                                                                deathsCompCases_testPositive_U5,
+                                                                presumptiveDeathsComp_O5,
+                                                                presumptiveDeathsComp_U5,na.rm = T
+                                                               ),
+                                    totTestedDeaths       = sum(
+                                                                deathsCompCases_testPositive_O5,
+                                                                deathsCompCases_testPositive_U5,
+                                                                na.rm = T
+                                                               ),
+                                    
+                                    totTestedDeaths_U5    = sum(
+                                                                deathsCompCases_testPositive_U5,
+                                                                na.rm = T
+                                                               ),
+                                    
+                                    totTestedDeaths_O5    = sum(
+                                                                deathsCompCases_testPositive_O5,
+                                                                na.rm = T
+                                                               )
+                                  )
+
+
+
+
+
+
+```
+
+
+
 
